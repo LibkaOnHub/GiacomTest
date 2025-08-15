@@ -21,6 +21,17 @@ namespace Order.Service.Tests
         private DbConnection _connection;
 
         private readonly byte[] _orderStatusCreatedId = Guid.NewGuid().ToByteArray();
+        const string _orderStatusCreatedName = "Created";
+
+        private readonly byte[] _orderStatusInProgressId = Guid.NewGuid().ToByteArray();
+        const string _orderStatusInProgressName = "In Progress";
+
+        private readonly byte[] _orderStatusCompletedId = Guid.NewGuid().ToByteArray();
+        const string _orderStatusCompletedName = "Completed";
+
+        private readonly byte[] _orderStatusFailedId = Guid.NewGuid().ToByteArray();
+        const string _orderStatusFailedName = "Failed";
+
         private readonly byte[] _orderServiceEmailId = Guid.NewGuid().ToByteArray();
         private readonly byte[] _orderProductEmailId = Guid.NewGuid().ToByteArray();
 
@@ -114,6 +125,36 @@ namespace Order.Service.Tests
         }
 
         [Test]
+        public async Task GetOrdersByStatusAsync_ReturnsOrdersWithSelectedStatus()
+        {
+            // Arrange
+            var orderId1 = Guid.NewGuid();
+            await AddOrder(orderId1, 75, _orderStatusCreatedId);
+
+            var orderId2 = Guid.NewGuid();
+            await AddOrder(orderId2, 5454, _orderStatusFailedId);
+
+            var orderId3 = Guid.NewGuid();
+            await AddOrder(orderId3, 233, _orderStatusCreatedId);
+
+            var orderId4 = Guid.NewGuid();
+            await AddOrder(orderId4, 862, _orderStatusFailedId);
+
+            var orderId5 = Guid.NewGuid();
+            await AddOrder(orderId5, 2233, _orderStatusInProgressId);
+
+            // Act
+            var orders = await _orderService.GetOrderSummariesByStatusNameAsync(_orderStatusCreatedName);
+
+            // Assert
+            Assert.AreEqual(2, orders.Count());
+            Assert.IsTrue(orders.All(x => x.StatusName == _orderStatusCreatedName));
+
+            Assert.IsTrue(orders.Any(x => x.Id == orderId1));
+            Assert.IsTrue(orders.Any(x => x.Id == orderId3));
+        }
+
+        [Test]
         public async Task GetOrderByIdAsync_ReturnsCorrectOrder()
         {
             // Arrange
@@ -158,6 +199,11 @@ namespace Order.Service.Tests
 
         private async Task AddOrder(Guid orderId, int quantity)
         {
+            await AddOrder(orderId, quantity, _orderStatusCreatedId);
+        }
+
+        private async Task AddOrder(Guid orderId, int quantity, byte[] status)
+        {
             var orderIdBytes = orderId.ToByteArray();
             _orderContext.Order.Add(new Data.Entities.Order
             {
@@ -165,7 +211,7 @@ namespace Order.Service.Tests
                 ResellerId = Guid.NewGuid().ToByteArray(),
                 CustomerId = Guid.NewGuid().ToByteArray(),
                 CreatedDate = DateTime.Now,
-                StatusId = _orderStatusCreatedId,
+                StatusId = status,
             });
 
             _orderContext.OrderItem.Add(new OrderItem
@@ -182,17 +228,41 @@ namespace Order.Service.Tests
 
         private async Task AddReferenceDataAsync(OrderContext orderContext)
         {
+            // statuses
+
             orderContext.OrderStatus.Add(new OrderStatus
             {
                 Id = _orderStatusCreatedId,
-                Name = "Created",
+                Name = _orderStatusCreatedName,
             });
+
+            orderContext.OrderStatus.Add(new OrderStatus
+            {
+                Id = _orderStatusInProgressId,
+                Name = _orderStatusInProgressName,
+            });
+
+            orderContext.OrderStatus.Add(new OrderStatus
+            {
+                Id = _orderStatusCompletedId,
+                Name = _orderStatusCompletedName,
+            });
+
+            orderContext.OrderStatus.Add(new OrderStatus
+            {
+                Id = _orderStatusFailedId,
+                Name = _orderStatusFailedName,
+            });
+
+            // services
 
             orderContext.OrderService.Add(new Data.Entities.OrderService
             {
                 Id = _orderServiceEmailId,
                 Name = "Email"
             });
+
+            // products
 
             orderContext.OrderProduct.Add(new OrderProduct
             {
