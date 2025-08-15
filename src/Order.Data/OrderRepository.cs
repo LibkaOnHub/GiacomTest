@@ -161,7 +161,7 @@ namespace Order.Data
         public async Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsForCompletedOrdersAsync()
         {
             var orderItems = await _orderContext.Order
-                .Where(o => o.Status.Name == "completed")
+                .Where(o => o.Status.Name == "Completed")
                 .SelectMany(o => o.Items, (o, i) => new
                 {
                     o.CreatedDate,

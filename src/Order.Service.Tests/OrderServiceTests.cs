@@ -35,6 +35,9 @@ namespace Order.Service.Tests
         private readonly byte[] _orderServiceEmailId = Guid.NewGuid().ToByteArray();
         private readonly byte[] _orderProductEmailId = Guid.NewGuid().ToByteArray();
 
+        const decimal _orderProductEmailUnitCost = 0.8m;
+        const decimal _orderProductEmailUnitPrice = 0.9m;
+
 
         [SetUp]
         public async Task Setup()
@@ -219,6 +222,43 @@ namespace Order.Service.Tests
         }
 
         [Test]
+        public async Task GetMonthlyProfitsForCompletedOrders_CalculatedCorrectly()
+        {
+            // Arrange
+            const int quantity = 10;
+
+            var orderId1 = Guid.NewGuid();
+            await AddOrder(orderId1, quantity, _orderStatusCreatedId);
+
+            var orderId2 = Guid.NewGuid();
+            await AddOrder(orderId2, quantity, _orderStatusCompletedId);
+
+            var orderId3 = Guid.NewGuid();
+            await AddOrder(orderId3, quantity, _orderStatusCreatedId);
+
+            var orderId4 = Guid.NewGuid();
+            await AddOrder(orderId4, quantity, _orderStatusCompletedId);
+
+            var orderId5 = Guid.NewGuid();
+            await AddOrder(orderId5, quantity, _orderStatusCreatedId);
+
+            // Act
+            var monthlyProfits = await _orderService.GetMonthlyProfitsForCompletedOrdersAsync();
+
+            // Assert
+            Assert.IsNotNull(monthlyProfits);
+            Assert.IsTrue(monthlyProfits.Any());
+
+            var profitPerOneProduct = _orderProductEmailUnitPrice - _orderProductEmailUnitCost;
+            var completedOrders = 2;
+
+            var totalProfitPerThisMonth = profitPerOneProduct * quantity * completedOrders;
+
+            Assert.AreEqual(1, monthlyProfits.Count());
+            Assert.AreEqual(totalProfitPerThisMonth, monthlyProfits.First().Profit);
+        }
+
+        [Test]
         public async Task GetOrderByIdAsync_ReturnsCorrectOrder()
         {
             // Arrange
@@ -332,8 +372,8 @@ namespace Order.Service.Tests
             {
                 Id = _orderProductEmailId,
                 Name = "100GB Mailbox",
-                UnitCost = 0.8m,
-                UnitPrice = 0.9m,
+                UnitCost = _orderProductEmailUnitCost,
+                UnitPrice = _orderProductEmailUnitPrice,
                 ServiceId = _orderServiceEmailId
             });
 
