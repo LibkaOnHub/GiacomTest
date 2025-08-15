@@ -155,6 +155,23 @@ namespace Order.Service.Tests
         }
 
         [Test]
+        public async Task UpdateOrderStatusAsync_ChangesStatus()
+        {
+            // Arrange
+            var orderId1 = Guid.NewGuid();
+            await AddOrder(orderId1, 75, _orderStatusCreatedId);
+
+            // Act
+            var result = await _orderService.UpdateOrderStatusAsync(orderId1, _orderStatusInProgressName);
+
+            var updatedOrder = await _orderService.GetOrderByIdAsync(orderId1);
+
+            // Assert
+            Assert.IsTrue(result);
+            Assert.AreEqual(_orderStatusInProgressId, updatedOrder.StatusId);
+        }
+
+        [Test]
         public async Task GetOrderByIdAsync_ReturnsCorrectOrder()
         {
             // Arrange
