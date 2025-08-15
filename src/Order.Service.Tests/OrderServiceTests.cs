@@ -172,6 +172,53 @@ namespace Order.Service.Tests
         }
 
         [Test]
+        public async Task CreateOrderAsync_CreatesRecord()
+        {
+            // Arrange
+            var orderId = Guid.NewGuid();
+
+            var orderToCreate = new Data.Entities.Order
+            {
+                Id = orderId.ToByteArray(),
+                ResellerId = Guid.NewGuid().ToByteArray(),
+                CustomerId = Guid.NewGuid().ToByteArray(),
+                CreatedDate = DateTime.Now,
+                StatusId = _orderStatusCreatedId,
+                Items =
+                [
+                    new OrderItem
+                    {
+                        Id = Guid.NewGuid().ToByteArray(),
+                        ServiceId = _orderServiceEmailId,
+                        ProductId = _orderProductEmailId,
+                        Quantity = 456
+                    }
+                ]
+            };
+
+            // Act
+            var result = await _orderService.CreateOrderAsync(orderToCreate);
+
+            var orderFromDb = await _orderService.GetOrderByIdAsync(orderId);
+
+            // Assert
+            Assert.AreEqual(orderId, result);
+
+            Assert.IsNotNull(orderFromDb);
+            Assert.AreEqual(orderToCreate.Id, orderFromDb.Id);
+            Assert.AreEqual(orderToCreate.ResellerId, orderFromDb.ResellerId);
+            Assert.AreEqual(orderToCreate.CustomerId, orderFromDb.CustomerId);
+            Assert.AreEqual(orderToCreate.StatusId, orderFromDb.StatusId);
+            Assert.AreEqual(orderToCreate.CreatedDate, orderFromDb.CreatedDate);
+
+            Assert.AreEqual(1, orderFromDb.Items.Count);
+            var item = orderToCreate.Items.First();
+            Assert.AreEqual(item.ServiceId, orderFromDb.Items.First().ServiceId);
+            Assert.AreEqual(item.ProductId, orderFromDb.Items.First().ProductId);
+            Assert.AreEqual(item.Quantity, orderFromDb.Items.First().Quantity);
+        }
+
+        [Test]
         public async Task GetOrderByIdAsync_ReturnsCorrectOrder()
         {
             // Arrange
